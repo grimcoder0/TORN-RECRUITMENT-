@@ -1,0 +1,406 @@
+﻿datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PLAYER
+  COMPANY_DIRECTOR
+  FACTION_LEADER
+  RECRUITER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum DiscoveryStatus {
+  DISCOVERED
+  OPEN
+  VERIFIED_RECRUITING
+  NO_OPENING
+  STALE
+  CLAIMED
+  CLOSED
+}
+
+enum TrainingType {
+  NO_TRAINING
+  FREE_TRAINING
+  PAID_TRAINING
+  ROTATIONAL_TRAINING
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  WITHDRAWN
+  EXPIRED
+  CANCELLED
+}
+
+enum VerificationStatus {
+  VERIFIED
+  PENDING
+  EXPIRED
+  REVOKED
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum EntityType {
+  COMPANY
+  FACTION
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  username      String         @unique
+  passwordHash  String
+  roles         Role[]         @default([PLAYER])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tornAccount   TornAccount?
+  playerProfile PlayerProfile?
+  sentOffers    Offer[]        @relation("BuyerOffers")
+  receivedOffers Offer[]       @relation("SellerOffers")
+  sentMessages  Message[]      @relation("SentMessages")
+  conversations ConversationParticipant[]
+  watchlists    Watchlist[]
+  notifications Notification[]
+  reports       Report[]       @relation("ReportedBy")
+  auditLogs     AuditLog[]
+}
+
+model TornAccount {
+  id              String             @id @default(uuid())
+  userId          String             @unique
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tornPlayerId    Int                @unique
+  tornPlayerName  String
+  level           Int                @default(1)
+  encryptedApiKey String?
+  keyAccessLevel  String?            // Public, Minimal, Limited, Full
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt      DateTime?
+  lastSyncedAt    DateTime           @default(now())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  companies       Company[]          @relation("DirectorCompanies")
+  factions        Faction[]          @relation("LeaderFactions")
+}
+
+model PlayerProfile {
+  id               String       @id @default(uuid())
+  userId           String       @unique
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manualLabor      Int          @default(0)
+  intelligence     Int          @default(0)
+  endurance        Int          @default(0)
+  preferredSalary  BigInt?
+  trainingWanted   TrainingType @default(NO_TRAINING)
+  bio              String?
+  lookingForJob    Boolean      @default(true)
+  lookingForFaction Boolean     @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Company {
+  id                String            @id @default(uuid())
+  tornCompanyId     Int               @unique
+  name              String
+  companyTypeId     Int
+  companyTypeName   String
+  rating            Int               @default(0) // stars (0-10)
+  directorId        Int?
+  directorTornAccount TornAccount?    @relation("DirectorCompanies", fields: [directorId], references: [tornPlayerId])
+  employeeCapacity  Int               @default(0)
+  employeeCount     Int               @default(0)
+  availableCapacity Int               @default(0)
+  discoveryStatus   DiscoveryStatus   @default(DISCOVERED)
+  isDirectorVerified Boolean          @default(false)
+  firstDetectedAt   DateTime          @default(now())
+  lastDetectedAt    DateTime          @default(now())
+  lastVerifiedAt    DateTime?
+  lastSyncedAt      DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  snapshots         CompanySnapshot[]
+  recruitmentJobs   CompanyJob[]
+  saleListing       CompanySaleListing?
+  watchlists        Watchlist[]
+}
+
+model CompanySnapshot {
+  id                String    @id @default(uuid())
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  rating            Int
+  employeeCapacity  Int
+  employeeCount     Int
+  availableCapacity Int
+  status            DiscoveryStatus
+  syncedAt          DateTime  @default(now())
+
+  @@index([companyId, syncedAt])
+}
+
+model CompanyJob {
+  id                    String            @id @default(uuid())
+  companyId             String
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  positionName          String
+  openings              Int               @default(1)
+  salary                BigInt            @default(0)
+  salaryFrequency       String            @default("daily") // daily, weekly
+  trainingType          TrainingType      @default(NO_TRAINING)
+  minimumLevel          Int               @default(1)
+  requiredManual        Int               @default(0)
+  requiredIntelligence  Int               @default(0)
+  requiredEndurance     Int               @default(0)
+  description           String?
+  benefits              String?
+  status                DiscoveryStatus   @default(VERIFIED_RECRUITING)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  trainingPrograms      TrainingProgram[]
+}
+
+model TrainingProgram {
+  id          String         @id @default(uuid())
+  companyJobId String
+  companyJob  CompanyJob     @relation(fields: [companyJobId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  stages      TrainingStage[]
+}
+
+model TrainingStage {
+  id                String          @id @default(uuid())
+  trainingProgramId String
+  trainingProgram   TrainingProgram @relation(fields: [trainingProgramId], references: [id], onDelete: Cascade)
+  stageOrder        Int
+  position          String
+  durationDays      Int
+  targetGain        String?
+}
+
+model Faction {
+  id                  String             @id @default(uuid())
+  tornFactionId       Int                @unique
+  name                String
+  tag                 String?
+  leaderId            Int?
+  leaderTornAccount   TornAccount?       @relation("LeaderFactions", fields: [leaderId], references: [tornPlayerId])
+  respect             BigInt             @default(0)
+  capacity            Int                @default(0)
+  memberCount         Int                @default(0)
+  availableCapacity   Int                @default(0)
+  discoveryStatus     DiscoveryStatus    @default(DISCOVERED)
+  isLeaderVerified    Boolean            @default(false)
+  firstDetectedAt     DateTime           @default(now())
+  lastDetectedAt      DateTime           @default(now())
+  lastVerifiedAt      DateTime?
+  lastSyncedAt        DateTime           @default(now())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  snapshots           FactionSnapshot[]
+  recruitmentListing  FactionRecruitmentListing?
+  saleListing         FactionSaleListing?
+  watchlists          Watchlist[]
+}
+
+model FactionSnapshot {
+  id                String          @id @default(uuid())
+  factionId         String
+  faction           Faction         @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  respect           BigInt
+  capacity          Int
+  memberCount       Int
+  availableCapacity Int
+  status            DiscoveryStatus
+  syncedAt          DateTime        @default(now())
+
+  @@index([factionId, syncedAt])
+}
+
+model FactionRecruitmentListing {
+  id                  String          @id @default(uuid())
+  factionId           String          @unique
+  faction             Faction         @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  minimumLevel        Int             @default(1)
+  minimumBattleStats  BigInt          @default(0)
+  warParticipation    String?
+  chainRequirements   String?
+  ocExpectations      String?
+  benefits            String?
+  description         String?
+  status              DiscoveryStatus @default(VERIFIED_RECRUITING)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+model CompanySaleListing {
+  id                   String               @id @default(uuid())
+  companyId            String               @unique
+  company              Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sellerId             String
+  askingPrice          BigInt
+  employeesIncluded    Boolean              @default(true)
+  assetsDescription    String?
+  inventoryDescription String?
+  description          String?
+  status               String               @default("ACTIVE")
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  offers               Offer[]
+  priceHistory         ListingPriceHistory[]
+}
+
+model FactionSaleListing {
+  id                  String               @id @default(uuid())
+  factionId           String               @unique
+  faction             Faction              @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  sellerId            String
+  askingPrice         BigInt
+  membersIncluded     Boolean              @default(true)
+  upgradesDescription String?
+  armoryDescription   String?
+  description         String?
+  status              String               @default("ACTIVE")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  offers              Offer[]
+  priceHistory        ListingPriceHistory[]
+}
+
+model Offer {
+  id                  String              @id @default(uuid())
+  companyListingId    String?
+  companyListing      CompanySaleListing? @relation(fields: [companyListingId], references: [id], onDelete: Cascade)
+  factionListingId    String?
+  factionListing      FactionSaleListing? @relation(fields: [factionListingId], references: [id], onDelete: Cascade)
+  buyerId             String
+  buyer               User                @relation("BuyerOffers", fields: [buyerId], references: [id])
+  sellerId            String
+  seller              User                @relation("SellerOffers", fields: [sellerId], references: [id])
+  amount              BigInt
+  counterAmount       BigInt?
+  message             String?
+  status              OfferStatus         @default(PENDING)
+  expiresAt           DateTime
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model ListingPriceHistory {
+  id               String              @id @default(uuid())
+  companyListingId String?
+  companyListing   CompanySaleListing? @relation(fields: [companyListingId], references: [id], onDelete: Cascade)
+  factionListingId String?
+  factionListing   FactionSaleListing? @relation(fields: [factionListingId], references: [id], onDelete: Cascade)
+  oldPrice         BigInt
+  newPrice         BigInt
+  changedBy        String
+  changedAt        DateTime            @default(now())
+}
+
+model Watchlist {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType EntityType
+  companyId  String?
+  company    Company?    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  factionId  String?
+  faction    Faction?    @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+
+  @@unique([userId, entityType, companyId, factionId])
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  title        String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reporterId String
+  reporter   User         @relation("ReportedBy", fields: [reporterId], references: [id])
+  targetType String       // USER, COMPANY, FACTION, LISTING, MESSAGE
+  targetId   String
+  reason     String
+  details    String?
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  resource  String
+  payload   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
