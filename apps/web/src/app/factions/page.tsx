@@ -18,12 +18,34 @@ export default function FactionsDirectoryPage() {
       leader: 'ApexWarlord [104921]',
       coLeader: 'ShadowBroker [2841920]',
       tier: 'Diamond Tier (Ranked Warring)',
+      focusCategory: 'WAR',
       status: 'LEADER VERIFIED — ACTIVELY RECRUITING',
       statusType: 'verified',
       lastSynced: '12m ago',
       warExpectation: 'Mandatory Ranked Wars',
       chainReq: '100+ hits on 10k chains',
+      ocExpectation: 'PA Team (Political Assassination 2.0)',
       benefits: 'Full Armory Access, Free Energy Cans, War Pay Out',
+    },
+    {
+      id: 29410,
+      name: 'Underworld Cartel',
+      tag: 'UWC',
+      respect: '3,100,000',
+      capacity: 90,
+      members: 86,
+      vacancies: 4,
+      leader: 'SyndicateDon [55210]',
+      coLeader: 'CrimeBoss [18492]',
+      tier: 'Dedicated Organized Crime 2.0 Syndicate',
+      focusCategory: 'OC',
+      status: 'LEADER VERIFIED — ACTIVELY RECRUITING',
+      statusType: 'verified',
+      lastSynced: '8m ago',
+      warExpectation: 'Casual / Low Requirement',
+      chainReq: 'Optional',
+      ocExpectation: 'Daily High-Yield OC 2.0 planning, max crime exp splits',
+      benefits: 'Full Crime Armory, Max Crime Success Perks',
     },
     {
       id: 8840,
@@ -35,12 +57,14 @@ export default function FactionsDirectoryPage() {
       vacancies: 3,
       leader: 'FireBrand [840192]',
       coLeader: 'AshMaker [719201]',
-      tier: 'Platinum Tier',
+      tier: 'Platinum Tier (Warring & Training)',
+      focusCategory: 'WAR',
       status: 'TORN DISCOVERED',
       statusType: 'discovered',
       lastSynced: '24m ago',
       warExpectation: 'Bi-weekly Ranked Wars',
       chainReq: '50 hits per chain',
+      ocExpectation: 'BMB / Plane Hijacking',
       benefits: 'Gym Gains Booster, Steadfast Perks',
     },
     {
@@ -54,36 +78,21 @@ export default function FactionsDirectoryPage() {
       leader: 'DrNeedles [39201]',
       coLeader: 'MedicOne [94029]',
       tier: 'Dedicated Revive Specialist',
+      focusCategory: 'REVIVE',
       status: 'TORN DISCOVERED',
       statusType: 'discovered',
       lastSynced: '5m ago',
       warExpectation: 'No Wars (Reviving Contracts Only)',
       chainReq: 'Optional',
+      ocExpectation: 'Casual Crime slots',
       benefits: '75+ Skill Revives, Xanax Supplied for Reviving',
-    },
-    {
-      id: 5012,
-      name: 'Ironclad Bastion',
-      tag: 'IB',
-      respect: '8,950,000',
-      capacity: 100,
-      members: 100,
-      vacancies: 0,
-      leader: 'Vanguard [12]',
-      coLeader: 'ShieldBearer [55]',
-      tier: 'Hall of Fame Tier',
-      status: 'NO OPENINGS',
-      statusType: 'full',
-      lastSynced: '2h ago',
-      warExpectation: 'Elite Warring',
-      chainReq: 'Top 50 City Ranks',
-      benefits: 'Maximum Toleration & Steadfast Branch Perks',
     },
   ];
 
   const filtered = factions.filter((f) => {
-    if (tierFilter === 'WAR' && !f.tier.includes('Warring')) return false;
-    if (tierFilter === 'REVIVE' && !f.tier.includes('Revive')) return false;
+    if (tierFilter === 'WAR' && f.focusCategory !== 'WAR') return false;
+    if (tierFilter === 'REVIVE' && f.focusCategory !== 'REVIVE') return false;
+    if (tierFilter === 'OC' && f.focusCategory !== 'OC') return false;
     if (statusFilter === 'OPEN' && f.vacancies === 0) return false;
     if (statusFilter === 'VERIFIED' && f.statusType !== 'verified') return false;
     return true;
@@ -99,7 +108,7 @@ export default function FactionsDirectoryPage() {
             </div>
             <h1 className="text-3xl font-black text-white">Torn Faction Directory</h1>
             <p className="text-sm text-slate-400 mt-1">
-              Discovered and leader-verified factions, ranked war expectations, and live capacity tracking.
+              Discovered and leader-verified factions, ranked war, reviving, and dedicated Organized Crime (OC) focuses.
             </p>
           </div>
 
@@ -110,6 +119,7 @@ export default function FactionsDirectoryPage() {
               className="h-10 px-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
             >
               <option value="ALL">All Faction Focuses</option>
+              <option value="OC">Organized Crime (OC) Only</option>
               <option value="WAR">Ranked Warring Only</option>
               <option value="REVIVE">Reviving Only</option>
             </select>
@@ -180,12 +190,12 @@ export default function FactionsDirectoryPage() {
 
               <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Wars:</span>
-                  <span className="text-slate-200">{f.warExpectation}</span>
+                  <span className="text-slate-400 font-medium">OC 2.0 Focus:</span>
+                  <span className="text-amber-400 font-semibold">{f.ocExpectation}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Chains:</span>
-                  <span className="text-slate-200">{f.chainReq}</span>
+                  <span className="text-slate-400 font-medium">War Expectation:</span>
+                  <span className="text-slate-200">{f.warExpectation}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400 font-medium">Perks & Benefits:</span>

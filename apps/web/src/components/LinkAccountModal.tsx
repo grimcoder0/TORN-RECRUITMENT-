@@ -68,7 +68,7 @@ export function LinkAccountModal({ isOpen, onClose, onVerified }: LinkAccountMod
             <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1">
               <p className="font-semibold text-amber-300">🛡️ Zero Password & Direct Live Verification</p>
               <p>
-                Enter your Torn API key. We query Torn in real time to fetch your actual level, work stats, current company, and faction status.
+                Enter your Torn API key. We query Torn in real time to fetch your actual level, work stats, current company, real stars, and faction status.
               </p>
               <p className="text-slate-500">Your key is never stored in plain text and never exposed to the browser.</p>
             </div>
@@ -113,7 +113,7 @@ export function LinkAccountModal({ isOpen, onClose, onVerified }: LinkAccountMod
         ) : (
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 font-medium">
-              ✓ Authenticated with Torn! Live profile and affiliations detected.
+              ✓ Authenticated with Torn! Live profile, real stars, and affiliations detected.
             </div>
 
             {/* Live Player & Affiliations Card */}
@@ -132,22 +132,36 @@ export function LinkAccountModal({ isOpen, onClose, onVerified }: LinkAccountMod
                 </span>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-slate-400">Company Affiliation:</span>
-                <span className={verifiedData.company.inCompany ? 'text-amber-300 font-semibold' : 'text-slate-500'}>
-                  {verifiedData.company.inCompany
-                    ? `${verifiedData.company.companyName} (${verifiedData.company.position})`
-                    : 'Unemployed'}
-                </span>
+                <div className="text-right">
+                  <span className={verifiedData.company.inCompany ? 'text-amber-300 font-semibold' : 'text-slate-500'}>
+                    {verifiedData.company.inCompany
+                      ? `${verifiedData.company.companyName} (${verifiedData.company.position})`
+                      : 'Unemployed'}
+                  </span>
+                  {verifiedData.company.inCompany && verifiedData.company.stars > 0 && (
+                    <span className="text-amber-400 ml-2 font-bold">
+                      {'★'.repeat(verifiedData.company.stars)} ({verifiedData.company.stars} Stars)
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-slate-400">Faction Affiliation:</span>
-                <span className={verifiedData.faction.inFaction ? 'text-indigo-300 font-semibold' : 'text-rose-400 font-semibold'}>
-                  {verifiedData.faction.inFaction
-                    ? `${verifiedData.faction.factionName} (${verifiedData.faction.position})`
-                    : 'No Faction Joined'}
-                </span>
+                <div className="text-right">
+                  <span className={verifiedData.faction.inFaction ? 'text-indigo-300 font-semibold' : 'text-rose-400 font-semibold'}>
+                    {verifiedData.faction.inFaction
+                      ? `${verifiedData.faction.factionName} (${verifiedData.faction.position})`
+                      : 'No Faction Joined'}
+                  </span>
+                  {verifiedData.faction.tag && (
+                    <span className="text-amber-400 font-mono ml-1.5 font-bold">
+                      [{verifiedData.faction.tag}]
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -152,16 +152,30 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
                   <span className="text-slate-500 block">Current Company</span>
-                  <span className={activeUser.company.inCompany ? 'text-amber-300 font-bold text-sm block mt-0.5' : 'text-slate-400 font-medium block mt-0.5'}>
-                    {activeUser.company.inCompany ? `${activeUser.company.companyName} (${activeUser.company.position})` : 'Unemployed'}
-                  </span>
+                  <div className="mt-0.5">
+                    <span className={activeUser.company.inCompany ? 'text-amber-300 font-bold text-sm' : 'text-slate-400 font-medium text-sm'}>
+                      {activeUser.company.inCompany ? `${activeUser.company.companyName} (${activeUser.company.position})` : 'Unemployed'}
+                    </span>
+                    {activeUser.company.inCompany && activeUser.company.stars > 0 && (
+                      <span className="text-amber-400 ml-2 font-bold text-xs">
+                        {'★'.repeat(activeUser.company.stars)} ({activeUser.company.stars} Stars)
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
                   <span className="text-slate-500 block">Current Faction</span>
-                  <span className={activeUser.faction.inFaction ? 'text-indigo-300 font-bold text-sm block mt-0.5' : 'text-rose-400 font-bold text-sm block mt-0.5'}>
-                    {activeUser.faction.inFaction ? `${activeUser.faction.factionName} (${activeUser.faction.position})` : 'No Faction Joined'}
-                  </span>
+                  <div className="mt-0.5">
+                    <span className={activeUser.faction.inFaction ? 'text-indigo-300 font-bold text-sm' : 'text-rose-400 font-bold text-sm'}>
+                      {activeUser.faction.inFaction ? `${activeUser.faction.factionName} (${activeUser.faction.position})` : 'No Faction Joined'}
+                    </span>
+                    {activeUser.faction.tag && (
+                      <span className="text-amber-400 font-mono ml-1.5 font-bold text-xs">
+                        [{activeUser.faction.tag}]
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
